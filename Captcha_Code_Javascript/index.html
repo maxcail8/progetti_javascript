@@ -1,0 +1,91 @@
+<html>
+
+<head>
+<title>Introduzione a AJAX</title>
+<!--<script src="jquery.min.js"></script> -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+
+<script>
+
+//Variabili
+var id_sessione, url_img;
+
+function sessione(){
+    let img = $("#captcha");
+
+    $.ajax({ //Chiamata ajax per id_sessione
+        type:'GET',
+        url: 'http://www.dais.unive.it/~cosmo/esercitazione3/captcha.php?callback=?&getIdentifier',
+        timeout: 4000,
+        dataType: 'json'
+    }).then(function(data){
+        id_sessione = data.id;
+        console.log("id_sessione: " + id_sessione);
+
+        let url_sessione = 'http://www.dais.unive.it/~cosmo/esercitazione3/captcha.php?callback=?&getImage&id=' + id_sessione;
+        console.log("url_sessione: " + url_sessione);
+
+        return $.ajax({ //Chiamata ajax per url_sessione
+            type:'GET',
+            url: url_sessione,
+            timeout: 4000,
+            dataType: 'json'
+        }).fail(function(){
+            alert("Errore nell'ottenere immagine sessione");
+        });
+    }).done(function(data){ //Imposto l'immagine ottenuta dall'url
+        url_img = 'http://www.dais.unive.it/~cosmo/esercitazione3/' + data.url;
+        console.log("url_img: " + url_img);
+        img.prop("src", url_img);
+    }).fail(function(){
+        alert("Errore nell'ottenere id sessione");
+    });
+}
+
+$(document).ready(function(){
+    sessione();
+
+    let btnOk = $("#ok");
+    btnOk.click( function() {
+        let code = $("#captcha_code").val(); //Codice digitato dall'utente
+        code = $.trim(code);
+        if(code!=""){
+            $.ajax({ ///Chiamata ajax per controllo codice digitato
+                type:'GET',
+                url: 'http://www.dais.unive.it/~cosmo/esercitazione3/captcha.php?callback=?&sendCode&id=' + id_sessione + '&code=' + code,
+                timeout: 4000,
+                dataType: 'json'
+            }).done(function(data){
+                if(data.auth)
+                    $(document.body).html("<span>Autenticazione riuscita!</span>");
+                else
+                   sessione();
+            }).fail(function(){
+                sessione();
+            });
+        }
+    });
+});
+
+
+
+    
+</script>
+    
+    
+<style>
+    img {
+        width: 215px;
+        height: 80px;
+    }
+</style>
+    
+</head>
+<body>
+    
+<!--Il corpo della pagina HTML non deve essere modificato -->
+<img id='captcha' /><br/>
+<input type='text' id='captcha_code'/>
+<button id="ok">OK</button>
+	   
+</body>
